@@ -1,7 +1,7 @@
 ---
 title: "Assignment: Prediction Assignment Writeup"
 author: Yan
-date: March 12, 2017
+date: March 13, 2017
 output: html_document
 ---
 
@@ -18,7 +18,7 @@ Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible t
 
 Given 2 files, we are asked to develop a machine learning paradigm to predict the type of exercise performed based an a variety of measurements. The first file is the training file, used to develop our algorithm, and the second is used to make our final predictions.
 
-Once downloaded to our working directory, we read in the file to perform some basic exploratory data analysis. I will remove columns which contain NA’s, as well as remove columns which I do not believe have any outcome for the class.
+Once downloaded to our working directory, we read in the file to perform some basic exploratory data analysis. We will remove columns which contain NA’s, as well as remove columns which we do not believe have any outcome for the class.
 
 The training data is: https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
 
@@ -100,7 +100,8 @@ dim(TestSet)
 
 ## Prediction Model Building
 
-Two popular methods will be applied to model the regressions (in the Train dataset) and the best one (with higher accuracy when applied to the Test dataset) will be used for the quiz predictions. The methods are: Random Forests and Decision Tree, as described below. A Confusion Matrix is plotted at the end of each analysis to better visualize the accuracy of the models.
+Three popular methods will be applied to model the regressions (in the Train dataset) and the best one (with higher accuracy when applied to the Test dataset) will be used for the quiz predictions. The methods are: Random Forests, Decision Tree and Generalized Boosted Model (GBM), as described below. A Confusion Matrix is plotted at the end of each analysis to better visualize the accuracy of the models.
+
 
 ### Random Forests
 
@@ -151,12 +152,37 @@ plot(confMatDecTree$table, col = confMatDecTree$byClass,
                   round(confMatDecTree$overall['Accuracy'], 4)))
 ```
 
+### Generalized Boosted Model (GBM)
+
+```{r}
+# model fit
+set.seed(500)
+controlGBM <- trainControl(method = "repeatedcv", number = 3, repeats = 1)
+modFitGBM  <- train(classe ~ ., data=TrainSet, method = "gbm",
+                    trControl = controlGBM, verbose = FALSE)
+modFitGBM$finalModel
+```
+
+```{r}
+# prediction on Test dataset
+predictGBM <- predict(modFitGBM, newdata=TestSet)
+confMatGBM <- confusionMatrix(predictGBM, TestSet$classe)
+confMatGBM
+```
+
+
+```{r}
+# plot matrix results
+plot(confMatGBM$table, col = confMatGBM$byClass, 
+     main = paste("GBM - Accuracy =", round(confMatGBM$overall['Accuracy'], 4)))
+```
+
 
 ## Applying the selected Model to the Test Data
 
-The accuracy of the 2 regression modeling methods above are:
+The accuracy of the 3 regression modeling methods above are:
 
-Random Forest : 0.9971 and Decision Tree : 0.741. 
+Random Forest : 0.9971, Decision Tree : 0.741 and GBM : 0.9876.
 The Random Forest model will be applied to predict the 20 quiz results (testing dataset) as shown below.
 
 ```{r}
